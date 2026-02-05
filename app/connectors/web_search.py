@@ -18,7 +18,7 @@ class DuckDuckGoConnector(SourceConnector):
 
     name = "duckduckgo"
 
-    def __init__(self, results_per_query: int = 25):
+    def __init__(self, results_per_query: int = 30):
         self.results_per_query = results_per_query
 
     def generate_queries(self, criteria: AcquisitionCriteria) -> list[str]:
@@ -74,11 +74,45 @@ class DuckDuckGoConnector(SourceConnector):
             queries.append(f"{industry} ERP software")
             queries.append(f"{industry} POS software")
 
+        # Explicit Canada queries
+        canada_terms = ["Canada", "Canadian", "Ontario", "British Columbia", "Alberta", "Toronto", "Vancouver"]
+        for term in canada_terms:
+            for industry in criteria.industries_include[:5]:
+                queries.append(f"{industry} {term}")
+                queries.append(f"{industry} software {term}")
+
+        # Explicit Europe queries
+        europe_terms = ["Europe", "European", "UK", "United Kingdom", "Germany", "Netherlands", "Spain", "Portugal", "Malta"]
+        for term in europe_terms:
+            for industry in criteria.industries_include[:5]:
+                queries.append(f"{industry} {term}")
+                queries.append(f"{industry} software {term}")
+
+        # Cannabis-specific regional queries
+        queries.append("cannabis software Canada")
+        queries.append("cannabis tech Canada")
+        queries.append("cannabis POS Canada")
+        queries.append("seed to sale software Canada")
+        queries.append("dispensary software Canada")
+        queries.append("cannabis software Europe")
+        queries.append("cannabis software UK")
+        queries.append("cannabis software Germany")
+        queries.append("cannabis software Netherlands")
+        queries.append("cannabis tech Europe")
+        queries.append("cannabis compliance software Europe")
+        queries.append("medical cannabis software Europe")
+        queries.append("cannabis ERP Canada")
+        queries.append("cannabis inventory software Canada")
+        queries.append("Canadian cannabis technology companies")
+        queries.append("European cannabis software vendors")
+        queries.append("top cannabis software companies Canada")
+        queries.append("top cannabis tech companies Europe")
+
         # Add exclusion terms to queries
         exclusions = " ".join(f"-{term}" for term in criteria.keywords_exclude[:5])
 
         # Return more queries for broader coverage
-        return [f"{q} {exclusions}".strip() for q in queries[:80]]
+        return [f"{q} {exclusions}".strip() for q in queries[:120]]
 
     async def search(
         self,

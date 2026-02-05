@@ -151,18 +151,30 @@ async function loadResults() {
  * Extract region from company data
  */
 function extractRegion(company) {
-    // Try to extract from domain TLD or industries
     const domain = company.domain || '';
+    const name = (company.name || '').toLowerCase();
+    const industries = (company.industries || []).join(' ').toLowerCase();
+    const summary = (company.match_summary || []).join(' ').toLowerCase();
+    const allText = `${name} ${industries} ${summary}`;
+
+    // Check domain TLD first
     const tldMap = {
+        '.ca': 'Canada',
         '.uk': 'United Kingdom',
         '.co.uk': 'United Kingdom',
         '.de': 'Germany',
+        '.nl': 'Netherlands',
+        '.es': 'Spain',
+        '.pt': 'Portugal',
         '.fr': 'France',
-        '.ca': 'Canada',
+        '.it': 'Italy',
+        '.eu': 'Europe',
         '.au': 'Australia',
+        '.nz': 'New Zealand',
         '.io': 'Global',
         '.com': 'United States',
-        '.co': 'United States'
+        '.co': 'United States',
+        '.us': 'United States'
     };
 
     for (const [tld, region] of Object.entries(tldMap)) {
@@ -171,7 +183,30 @@ function extractRegion(company) {
         }
     }
 
-    return 'Unknown';
+    // Check text content for geographic hints
+    if (allText.includes('canada') || allText.includes('canadian') || allText.includes('toronto') || allText.includes('vancouver') || allText.includes('ontario') || allText.includes('british columbia') || allText.includes('alberta')) {
+        return 'Canada';
+    }
+    if (allText.includes('uk') || allText.includes('united kingdom') || allText.includes('london') || allText.includes('british')) {
+        return 'United Kingdom';
+    }
+    if (allText.includes('germany') || allText.includes('german') || allText.includes('berlin') || allText.includes('munich')) {
+        return 'Germany';
+    }
+    if (allText.includes('netherlands') || allText.includes('dutch') || allText.includes('amsterdam')) {
+        return 'Netherlands';
+    }
+    if (allText.includes('europe') || allText.includes('european')) {
+        return 'Europe';
+    }
+    if (allText.includes('spain') || allText.includes('spanish') || allText.includes('madrid') || allText.includes('barcelona')) {
+        return 'Spain';
+    }
+    if (allText.includes('portugal') || allText.includes('portuguese') || allText.includes('lisbon')) {
+        return 'Portugal';
+    }
+
+    return 'United States';
 }
 
 /**
