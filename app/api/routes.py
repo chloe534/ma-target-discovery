@@ -380,13 +380,21 @@ async def enrich_candidates(
                     enriched_company.customer_types = merged.get("customer_types", [])
                     enriched_company.employees_estimate = merged.get("employee_count")
                     enriched_company.revenue_estimate = merged.get("revenue_estimate")
+                    enriched_company.revenue_is_estimated = parsed.revenue_is_estimated
                     enriched_company.compliance_indicators = merged.get("compliance_indicators", [])
                     enriched_company.signals_detected = merged.get("signals", [])
                     enriched_company.extraction_confidence = merged.get("overall_confidence", 0.0)
 
+                    # Cannabis and software revenue fields
+                    enriched_company.is_cannabis_industry = parsed.is_cannabis_industry
+                    enriched_company.cannabis_confidence = parsed.cannabis_confidence
+                    enriched_company.software_revenue_confidence = parsed.software_revenue_confidence
+
                     # Classify and detect disqualifiers
                     classification = classifier.classify(combined_text, criteria, merged)
                     enriched_company.industries = classification.industries
+                    if parsed.is_cannabis_industry and "cannabis software" not in enriched_company.industries:
+                        enriched_company.industries.insert(0, "cannabis software")
                     enriched_company.disqualifiers_detected = classification.disqualifiers_detected
 
             enriched_company.enriched_at = datetime.utcnow()

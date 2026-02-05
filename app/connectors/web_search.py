@@ -37,12 +37,15 @@ class DuckDuckGoConnector(SourceConnector):
                 queries.append(f"{industry} {bm_type}")
                 queries.append(f"{industry} {bm_type} startup")
                 queries.append(f"{industry} {bm_type} company")
+                queries.append(f"{industry} {bm_type} platform")
+                queries.append(f"{industry} {bm_type} vendor")
 
         # Geography-specific queries
         for country in criteria.geography.countries[:3]:
             for industry in criteria.industries_include[:3]:
                 queries.append(f"{industry} companies {country}")
-                queries.append(f"{industry} startups {country}")
+                queries.append(f"{industry} software {country}")
+                queries.append(f"{industry} platform {country}")
 
         # Customer type queries
         for ctype in criteria.customer_type[:2]:
@@ -52,15 +55,30 @@ class DuckDuckGoConnector(SourceConnector):
         # Additional discovery queries
         for keyword in criteria.keywords_include[:5]:
             queries.append(f"{keyword} software companies")
-            queries.append(f"{keyword} startups 2024")
+            queries.append(f"{keyword} software vendors")
             queries.append(f"top {keyword} companies")
             queries.append(f"best {keyword} platforms")
+            queries.append(f"{keyword} technology companies")
+            queries.append(f"leading {keyword} software")
+
+        # Industry-specific deep queries
+        for industry in criteria.industries_include:
+            queries.append(f"{industry} software market leaders")
+            queries.append(f"{industry} enterprise software")
+            queries.append(f"{industry} SaaS companies list")
+            queries.append(f"{industry} tech companies funding")
+            queries.append(f"{industry} software vendors list 2024")
+            queries.append(f"top {industry} software companies")
+            queries.append(f"{industry} management software")
+            queries.append(f"{industry} compliance software")
+            queries.append(f"{industry} ERP software")
+            queries.append(f"{industry} POS software")
 
         # Add exclusion terms to queries
         exclusions = " ".join(f"-{term}" for term in criteria.keywords_exclude[:5])
 
         # Return more queries for broader coverage
-        return [f"{q} {exclusions}".strip() for q in queries[:40]]
+        return [f"{q} {exclusions}".strip() for q in queries[:80]]
 
     async def search(
         self,

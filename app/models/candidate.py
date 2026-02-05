@@ -44,6 +44,7 @@ class EnrichedCompany(CandidateCompany):
     headquarters: Optional[str] = None
     employees_estimate: Optional[int] = None
     revenue_estimate: Optional[int] = None
+    revenue_is_estimated: bool = False
     funding_total: Optional[int] = None
 
     # Business classification
@@ -51,6 +52,11 @@ class EnrichedCompany(CandidateCompany):
     business_model_confidence: float = 0.0
     customer_types: list[str] = Field(default_factory=list)
     industries: list[str] = Field(default_factory=list)
+
+    # Cannabis/software specific fields
+    is_cannabis_industry: bool = False
+    cannabis_confidence: float = 0.0
+    software_revenue_confidence: float = 0.0
 
     # Compliance and signals
     compliance_indicators: list[str] = Field(default_factory=list)

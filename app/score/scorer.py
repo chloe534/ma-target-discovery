@@ -99,14 +99,28 @@ class Scorer:
         """Calculate score for each criterion category."""
         scores = {}
 
-        # Industry match score
-        scores["industry"] = self._score_industry(company, criteria)
+        # Industry match score - boost for cannabis if cannabis keywords in criteria
+        industry_score = self._score_industry(company, criteria)
+        if company.is_cannabis_industry:
+            # Check if cannabis is in criteria
+            cannabis_in_criteria = any(
+                "cannabis" in ind.lower()
+                for ind in criteria.industries_include
+            )
+            if cannabis_in_criteria:
+                # Give cannabis companies a significant boost
+                industry_score = max(industry_score, company.cannabis_confidence)
+        scores["industry"] = industry_score
 
         # Keyword match score
         scores["keyword"] = self._score_keywords(company, criteria, evidence)
 
-        # Business model score
-        scores["business_model"] = self._score_business_model(company, criteria)
+        # Business model score - factor in software revenue confidence
+        bm_score = self._score_business_model(company, criteria)
+        # Boost if high software revenue confidence
+        if company.software_revenue_confidence > 0.5:
+            bm_score = max(bm_score, company.software_revenue_confidence)
+        scores["business_model"] = bm_score
 
         # Customer type score
         scores["customer_type"] = self._score_customer_type(company, criteria)
@@ -380,17 +394,39 @@ class Scorer:
         """Generate human-readable match summary bullets."""
         summary = []
 
+        # Cannabis industry highlight (priority)
+        if company.is_cannabis_industry:
+            conf = int(company.cannabis_confidence * 100)
+            summary.append(f"CANNABIS SOFTWARE ({conf}% confidence)")
+
+        # ARR/Revenue information
+        if company.revenue_estimate:
+            arr_millions = company.revenue_estimate / 1_000_000
+            if company.revenue_is_estimated:
+                summary.append(f"Estimated ARR: ${arr_millions:.0f}M (from employee count)")
+            else:
+                summary.append(f"ARR: ${arr_millions:.0f}M")
+
+        # Software revenue confidence
+        if company.software_revenue_confidence > 0.3:
+            conf = int(company.software_revenue_confidence * 100)
+            summary.append(f"Software revenue indicators: {conf}% confidence")
+
         # Business model
         if company.business_model and score_breakdown.get("business_model", 0) > 0.5:
-            summary.append(f"{company.business_model} business model matches target profile")
+            summary.append(f"{company.business_model} business model")
 
         # Industry matches
         matched_industries = [
             ind for ind in company.industries
             if ind.lower() in [i.lower() for i in criteria.industries_include]
         ]
-        if matched_industries:
-            summary.append(f"Industry match: {', '.join(matched_industries)}")
+        if matched_industries and not company.is_cannabis_industry:
+            summary.append(f"Industry: {', '.join(matched_industries[:3])}")
+
+        # Size/scale
+        if company.employees_estimate:
+            summary.append(f"Team size: ~{company.employees_estimate} employees")
 
         # Customer type
         matched_customers = [
@@ -400,18 +436,6 @@ class Scorer:
         if matched_customers:
             summary.append(f"Customer focus: {', '.join(matched_customers)}")
 
-        # Size/scale
-        if company.employees_estimate:
-            summary.append(f"Team size: ~{company.employees_estimate} employees")
-
-        # Compliance
-        matched_compliance = [
-            c for c in company.compliance_indicators
-            if c in criteria.compliance_tags
-        ]
-        if matched_compliance:
-            summary.append(f"Compliance: {', '.join(matched_compliance)}")
-
         # Positive signals
         matched_signals = [
             s for s in company.signals_detected
@@ -419,18 +443,9 @@ class Scorer:
         ]
         if matched_signals:
             signal_labels = [s.replace("_", " ") for s in matched_signals]
-            summary.append(f"Positive signals: {', '.join(signal_labels)}")
-
-        # Key evidence
-        high_confidence_evidence = [e for e in evidence if e.confidence >= 0.7]
-        if high_confidence_evidence and len(summary) < 5:
-            for ev in high_confidence_evidence[:2]:
-                criterion_type = ev.criterion.split(":")[0]
-                if criterion_type == "keyword":
-                    keyword = ev.criterion.split(":")[1]
-                    summary.append(f"Keyword '{keyword}' found on website")
+            summary.append(f"Signals: {', '.join(signal_labels[:3])}")
 
         if not summary:
             summary.append("Limited match data available")
 
-        return summary[:6]  # Max 6 bullets
+        return summary[:7]  # Max 7 bullets

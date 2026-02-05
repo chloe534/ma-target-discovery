@@ -536,38 +536,67 @@
                     <h2>Acquisition Criteria</h2>
                     <label for="criteria">Criteria JSON</label>
                     <textarea id="criteria">{
-  "industries_include": ["healthcare tech", "fintech", "cybersecurity", "data analytics", "HR tech"],
-  "industries_exclude": ["gambling", "cryptocurrency"],
-  "keywords_include": ["SaaS", "B2B", "enterprise", "cloud", "platform", "software"],
-  "keywords_exclude": ["consulting", "agency"],
+  "industries_include": [
+    "cannabis software",
+    "cannabis tech",
+    "cannabis POS",
+    "seed to sale",
+    "cannabis compliance",
+    "cannabis ERP",
+    "dispensary software",
+    "cultivation software",
+    "cannabis inventory",
+    "cannabis retail"
+  ],
+  "industries_exclude": [],
+  "keywords_include": [
+    "SaaS",
+    "software",
+    "platform",
+    "subscription",
+    "cloud",
+    "cannabis",
+    "dispensary",
+    "cultivation",
+    "seed-to-sale",
+    "compliance tracking",
+    "inventory management",
+    "POS system",
+    "enterprise software"
+  ],
+  "keywords_exclude": ["consulting", "agency", "staffing", "services firm"],
   "geography": {
-    "countries": ["US", "UK", "CA", "DE", "AU"],
-    "exclude_countries": []
+    "countries": ["US", "USA", "Canada", "CA", "Europe", "UK", "Germany", "Netherlands"],
+    "exclude_countries": [],
+    "headquarters_only": false
   },
   "size": {
-    "employees_min": 10,
+    "employees_min": 30,
     "employees_max": 500,
-    "revenue_min": 1000000,
-    "revenue_max": 50000000
+    "revenue_min": 30000000,
+    "revenue_max": 50000000,
+    "funding_min": null,
+    "funding_max": null
   },
   "business_model": {
-    "types": ["SaaS", "marketplace"],
-    "exclude_types": ["services"],
-    "recurring_revenue_required": false
+    "types": ["SaaS", "software", "platform"],
+    "exclude_types": ["services", "consulting", "staffing", "agency", "marketplace", "hardware"],
+    "recurring_revenue_required": true
   },
   "customer_type": ["B2B", "enterprise", "SMB"],
-  "compliance_tags": ["SOC2"],
-  "disqualifiers": ["bankruptcy", "lawsuit"],
-  "dealbreakers": ["gambling", "adult content"],
-  "preferred_signals": ["growing_team", "recent_funding"],
+  "compliance_tags": [],
+  "disqualifiers": ["bankruptcy", "lawsuit", "primarily services", "consulting firm"],
+  "dealbreakers": [],
+  "preferred_signals": ["growing_team", "recent_funding", "subscription", "recurring revenue", "ARR"],
   "weights": {
-    "industry": 0.2,
-    "business_model": 0.2,
-    "customer_type": 0.15,
+    "industry": 0.35,
+    "business_model": 0.25,
+    "keyword": 0.15,
     "size": 0.15,
-    "compliance": 0.1,
-    "signals": 0.1,
-    "keyword": 0.1
+    "geography": 0.10,
+    "signals": 0.00,
+    "customer_type": 0.00,
+    "compliance": 0.00
   }
 }</textarea>
 

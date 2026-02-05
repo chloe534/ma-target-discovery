@@ -17,12 +17,19 @@ class ExtractionResult:
     customer_types: list[str] = field(default_factory=list)
     employee_count: Optional[int] = None
     revenue_estimate: Optional[int] = None
+    revenue_is_estimated: bool = False
     funding_total: Optional[int] = None
     industries: list[str] = field(default_factory=list)
     compliance_indicators: list[str] = field(default_factory=list)
     signals: list[str] = field(default_factory=list)
     evidence: dict[str, str] = field(default_factory=dict)
     overall_confidence: float = 0.0
+    # New fields for cannabis/software targeting
+    is_cannabis_industry: bool = False
+    cannabis_confidence: float = 0.0
+    software_revenue_confidence: float = 0.0
+    software_indicators_found: list[str] = field(default_factory=list)
+    services_indicators_found: list[str] = field(default_factory=list)
 
 
 class RuleBasedParser:
@@ -108,11 +115,78 @@ class RuleBasedParser:
 
     # Positive signals
     SIGNAL_PATTERNS = {
-        "growing_team": [r"we.?re.hiring", r"join.our.team", r"open.positions"],
-        "recent_funding": [r"recently.raised", r"just.raised", r"announced.funding"],
+        "growing_team": [r"we.?re.hiring", r"join.our.team", r"open.positions", r"careers"],
+        "recent_funding": [r"recently.raised", r"just.raised", r"announced.funding", r"series.[a-d]"],
         "product_launch": [r"just.launched", r"now.available", r"introducing"],
         "customer_growth": [r"serving.(\d+).customers", r"trusted.by.(\d+)"],
+        "subscription": [r"subscription", r"monthly.plan", r"annual.plan", r"pricing.plan"],
+        "recurring_revenue": [r"recurring.revenue", r"\barr\b", r"\bmrr\b", r"saas"],
     }
+
+    # Software business indicators (for 75% software revenue check)
+    SOFTWARE_INDICATORS = [
+        r"\bsaas\b",
+        r"\bsoftware.as.a.service\b",
+        r"cloud.platform",
+        r"subscription.software",
+        r"software.platform",
+        r"pricing.page",
+        r"free.trial",
+        r"sign.up",
+        r"start.free",
+        r"monthly.subscription",
+        r"annual.subscription",
+        r"per.user",
+        r"per.seat",
+        r"enterprise.plan",
+        r"software.solution",
+        r"platform.features",
+        r"api.access",
+        r"integrations",
+        r"dashboard",
+        r"analytics.platform",
+        r"management.software",
+        r"automation.platform",
+    ]
+
+    # Services/non-software indicators (negative for software revenue check)
+    SERVICES_INDICATORS = [
+        r"consulting.services",
+        r"professional.services",
+        r"managed.services",
+        r"staffing",
+        r"agency.services",
+        r"implementation.services",
+        r"hourly.rate",
+        r"project.based",
+        r"custom.development",
+        r"outsourcing",
+    ]
+
+    # Cannabis industry specific patterns
+    CANNABIS_INDICATORS = [
+        r"\bcannabis\b",
+        r"\bmarijuana\b",
+        r"\bdispensary\b",
+        r"\bcultivation\b",
+        r"\bseed.to.sale\b",
+        r"\bseed-to-sale\b",
+        r"\bmetrc\b",
+        r"\bbiotrack\b",
+        r"\bcannabis.compliance\b",
+        r"\bcannabis.pos\b",
+        r"\bcannabis.retail\b",
+        r"\bcannabis.erp\b",
+        r"\bhemp\b",
+        r"\bcbd\b",
+        r"\bthc\b",
+        r"\bterpene\b",
+        r"\bcannabinoid\b",
+        r"\bgrow.operation\b",
+        r"\bextraction\b",
+        r"\bedibles?\b",
+        r"\bconcentrates?\b",
+    ]
 
     def parse(self, text: str, metadata: Optional[dict] = None) -> ExtractionResult:
         """Extract structured data from text."""
@@ -180,6 +254,46 @@ class RuleBasedParser:
         for signal, patterns in self.SIGNAL_PATTERNS.items():
             if self._has_pattern_match(text_lower, patterns):
                 result.signals.append(signal)
+
+        # Check cannabis industry indicators
+        cannabis_matches = 0
+        for pattern in self.CANNABIS_INDICATORS:
+            matches = len(re.findall(pattern, text_lower, re.I))
+            cannabis_matches += matches
+        if cannabis_matches > 0:
+            result.is_cannabis_industry = True
+            result.cannabis_confidence = min(cannabis_matches / 5.0, 1.0)
+            result.industries.append("cannabis software")
+
+        # Check software revenue indicators
+        software_score = 0
+        for pattern in self.SOFTWARE_INDICATORS:
+            if re.search(pattern, text_lower, re.I):
+                software_score += 1
+                result.software_indicators_found.append(pattern)
+
+        services_score = 0
+        for pattern in self.SERVICES_INDICATORS:
+            if re.search(pattern, text_lower, re.I):
+                services_score += 1
+                result.services_indicators_found.append(pattern)
+
+        # Calculate software revenue confidence (higher software indicators, lower services = higher confidence)
+        if software_score > 0:
+            # Base confidence from software indicators
+            base_confidence = min(software_score / 8.0, 0.8)
+            # Penalty for services indicators
+            services_penalty = min(services_score * 0.15, 0.5)
+            result.software_revenue_confidence = max(0, base_confidence - services_penalty)
+        else:
+            result.software_revenue_confidence = 0.0
+
+        # ARR estimation heuristic: if no revenue found but employee count exists
+        # Estimate ARR = employee_count * $1,000,000
+        if result.revenue_estimate is None and result.employee_count is not None:
+            result.revenue_estimate = result.employee_count * 1_000_000
+            result.revenue_is_estimated = True
+            result.evidence["revenue"] = f"Estimated from {result.employee_count} employees"
 
         # Calculate overall confidence
         confidence_factors = [
