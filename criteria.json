@@ -1,0 +1,40 @@
+{
+  "industries_include": ["healthcare tech", "fintech", "cybersecurity"],
+  "industries_exclude": ["gambling", "cryptocurrency", "adult"],
+  "keywords_include": ["SaaS", "B2B", "enterprise", "cloud", "platform"],
+  "keywords_exclude": ["consulting", "agency", "freelance"],
+  "geography": {
+    "countries": ["US", "UK", "CA"],
+    "regions": [],
+    "exclude_countries": [],
+    "headquarters_only": false
+  },
+  "size": {
+    "employees_min": 10,
+    "employees_max": 500,
+    "revenue_min": 1000000,
+    "revenue_max": 50000000,
+    "funding_min": null,
+    "funding_max": null
+  },
+  "business_model": {
+    "types": ["SaaS"],
+    "exclude_types": ["services", "consulting"],
+    "recurring_revenue_required": true
+  },
+  "customer_type": ["B2B", "enterprise"],
+  "compliance_tags": ["SOC2", "HIPAA"],
+  "disqualifiers": ["bankruptcy", "litigation", "layoffs"],
+  "dealbreakers": ["gambling", "adult content", "cryptocurrency"],
+  "preferred_signals": ["growing_team", "recent_funding", "product_launch"],
+  "weights": {
+    "industry": 0.20,
+    "keyword": 0.10,
+    "business_model": 0.25,
+    "customer_type": 0.15,
+    "geography": 0.10,
+    "size": 0.10,
+    "compliance": 0.05,
+    "signals": 0.05
+  }
+}
