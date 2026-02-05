@@ -5,6 +5,8 @@
 const API_BASE = '/api';
 let currentRunId = null;
 let pollInterval = null;
+let allResults = [];
+let savedCompanies = JSON.parse(localStorage.getItem('savedCompanies') || '[]');
 
 // DOM Elements
 const criteriaInput = document.getElementById('criteria');
@@ -17,19 +19,43 @@ const exportBtn = document.getElementById('exportBtn');
 const evidenceModal = document.getElementById('evidenceModal');
 const modalTitle = document.getElementById('modalTitle');
 const modalBody = document.getElementById('modalBody');
+const regionFilter = document.getElementById('regionFilter');
+const savedContainer = document.getElementById('savedContainer');
+const savedRegionFilter = document.getElementById('savedRegionFilter');
+const savedCountSpan = document.getElementById('savedCount');
+const savedStats = document.getElementById('savedStats');
 
 // Event Listeners
 runSearchBtn.addEventListener('click', startSearch);
 exportBtn.addEventListener('click', exportResults);
+document.getElementById('exportSavedBtn').addEventListener('click', exportSavedCompanies);
+document.getElementById('clearSavedBtn').addEventListener('click', clearSavedCompanies);
 evidenceModal.addEventListener('click', (e) => {
     if (e.target === evidenceModal) closeModal();
 });
+regionFilter.addEventListener('change', filterResultsByRegion);
+savedRegionFilter.addEventListener('change', renderSavedCompanies);
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab + '-tab').classList.add('active');
+        if (tab.dataset.tab === 'saved') {
+            renderSavedCompanies();
+        }
+    });
+});
+
+// Initialize
+updateSavedCount();
 
 /**
  * Start a new search
  */
 async function startSearch() {
-    // Validate criteria JSON
     let criteria;
     try {
         criteria = JSON.parse(criteriaInput.value);
@@ -38,7 +64,6 @@ async function startSearch() {
         return;
     }
 
-    // Disable button
     runSearchBtn.disabled = true;
     runSearchBtn.innerHTML = '<span class="spinner"></span>Starting...';
 
@@ -49,7 +74,7 @@ async function startSearch() {
             body: JSON.stringify({
                 criteria: criteria,
                 use_mock: useMockCheckbox.checked,
-                limit: 50
+                limit: 100
             })
         });
 
@@ -59,10 +84,9 @@ async function startSearch() {
 
         const data = await response.json();
         currentRunId = data.run_id;
-        showStatus('Search started...', 'running');
+        showStatus('Search started... This may take a few minutes.', 'running');
 
-        // Start polling for status
-        pollInterval = setInterval(checkStatus, 2000);
+        pollInterval = setInterval(checkStatus, 3000);
 
     } catch (e) {
         showStatus('Failed to start search: ' + e.message, 'failed');
@@ -81,10 +105,10 @@ async function checkStatus() {
         const data = await response.json();
 
         if (data.status === 'running') {
-            showStatus(`Searching... Found ${data.total_found} candidates, scored ${data.total_scored}`, 'running');
+            showStatus(`Searching... Found ${data.total_found} candidates, enriched ${data.total_scored}`, 'running');
         } else if (data.status === 'completed') {
             clearInterval(pollInterval);
-            showStatus(`Completed! Found ${data.total_found} candidates.`, 'completed');
+            showStatus(`Completed! Found ${data.total_scored} companies.`, 'completed');
             await loadResults();
             resetButton();
         } else if (data.status === 'failed') {
@@ -108,7 +132,9 @@ async function loadResults() {
         const data = await response.json();
 
         if (data.results && data.results.length > 0) {
-            renderResults(data.results);
+            allResults = data.results;
+            populateRegionFilter(allResults);
+            renderResults(allResults);
             resultsCount.textContent = `${data.total_results} results`;
             exportBtn.style.display = 'inline-block';
         } else {
@@ -118,6 +144,113 @@ async function loadResults() {
         }
     } catch (e) {
         resultsContainer.innerHTML = `<div class="empty-state"><p>Failed to load results: ${e.message}</p></div>`;
+    }
+}
+
+/**
+ * Extract region from company data
+ */
+function extractRegion(company) {
+    // Try to extract from domain TLD or industries
+    const domain = company.domain || '';
+    const tldMap = {
+        '.uk': 'United Kingdom',
+        '.co.uk': 'United Kingdom',
+        '.de': 'Germany',
+        '.fr': 'France',
+        '.ca': 'Canada',
+        '.au': 'Australia',
+        '.io': 'Global',
+        '.com': 'United States',
+        '.co': 'United States'
+    };
+
+    for (const [tld, region] of Object.entries(tldMap)) {
+        if (domain.endsWith(tld)) {
+            return region;
+        }
+    }
+
+    return 'Unknown';
+}
+
+/**
+ * Populate region filter dropdown
+ */
+function populateRegionFilter(results) {
+    const regions = new Set(results.map(r => extractRegion(r)));
+    regionFilter.innerHTML = '<option value="">All Regions</option>';
+    Array.from(regions).sort().forEach(region => {
+        regionFilter.innerHTML += `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`;
+    });
+}
+
+/**
+ * Filter results by region
+ */
+function filterResultsByRegion() {
+    const selectedRegion = regionFilter.value;
+    if (!selectedRegion) {
+        renderResults(allResults);
+        resultsCount.textContent = `${allResults.length} results`;
+    } else {
+        const filtered = allResults.filter(r => extractRegion(r) === selectedRegion);
+        renderResults(filtered);
+        resultsCount.textContent = `${filtered.length} of ${allResults.length} results`;
+    }
+}
+
+/**
+ * Check if company is saved
+ */
+function isCompanySaved(domain) {
+    return savedCompanies.some(c => c.domain === domain);
+}
+
+/**
+ * Save a company
+ */
+function saveCompany(company) {
+    if (!isCompanySaved(company.domain)) {
+        const savedCompany = {
+            ...company,
+            region: extractRegion(company),
+            savedAt: new Date().toISOString()
+        };
+        savedCompanies.push(savedCompany);
+        localStorage.setItem('savedCompanies', JSON.stringify(savedCompanies));
+        updateSavedCount();
+        // Re-render to update button state
+        filterResultsByRegion();
+    }
+}
+
+/**
+ * Remove a saved company
+ */
+function removeCompany(domain) {
+    savedCompanies = savedCompanies.filter(c => c.domain !== domain);
+    localStorage.setItem('savedCompanies', JSON.stringify(savedCompanies));
+    updateSavedCount();
+    renderSavedCompanies();
+}
+
+/**
+ * Update saved count badge
+ */
+function updateSavedCount() {
+    savedCountSpan.textContent = `(${savedCompanies.length})`;
+}
+
+/**
+ * Clear all saved companies
+ */
+function clearSavedCompanies() {
+    if (confirm('Are you sure you want to remove all saved companies?')) {
+        savedCompanies = [];
+        localStorage.setItem('savedCompanies', JSON.stringify(savedCompanies));
+        updateSavedCount();
+        renderSavedCompanies();
     }
 }
 
@@ -132,22 +265,24 @@ function renderResults(results) {
         <table>
             <thead>
                 <tr>
-                    <th>Rank</th>
+                    <th style="width: 50px;">Rank</th>
                     <th>Company</th>
-                    <th>Score</th>
-                    <th>Confidence</th>
+                    <th style="width: 70px;">Score</th>
+                    <th style="width: 70px;">Region</th>
                     <th>Business Model</th>
                     <th>Industries</th>
-                    <th>Match Summary</th>
-                    <th>Evidence</th>
+                    <th style="width: 200px;">Match Summary</th>
+                    <th style="width: 80px;">Actions</th>
                 </tr>
             </thead>
             <tbody>
     `;
 
-    // Qualified results
     for (const r of qualified) {
         const scoreClass = r.fit_score >= 70 ? 'high' : r.fit_score >= 40 ? 'medium' : 'low';
+        const region = extractRegion(r);
+        const isSaved = isCompanySaved(r.domain);
+
         html += `
             <tr>
                 <td>#${r.rank}</td>
@@ -156,22 +291,24 @@ function renderResults(results) {
                     ${r.website ? `<br><a href="${escapeHtml(r.website)}" target="_blank" style="font-size: 0.75rem; color: var(--primary);">${escapeHtml(r.domain || r.website)}</a>` : ''}
                 </td>
                 <td><span class="score ${scoreClass}">${r.fit_score.toFixed(1)}</span></td>
-                <td>${(r.confidence * 100).toFixed(0)}%</td>
+                <td><span class="tag region">${escapeHtml(region)}</span></td>
                 <td>${escapeHtml(r.business_model || '-')}</td>
-                <td>${r.industries.map(i => `<span class="tag">${escapeHtml(i)}</span>`).join('') || '-'}</td>
-                <td style="max-width: 250px; font-size: 0.8125rem;">
+                <td>${r.industries.slice(0, 3).map(i => `<span class="tag">${escapeHtml(i)}</span>`).join('') || '-'}</td>
+                <td style="font-size: 0.75rem;">
                     ${r.match_summary.slice(0, 2).map(s => `<div>• ${escapeHtml(s)}</div>`).join('')}
+                    ${r.evidence.length > 0 ? `<button class="evidence-btn" onclick='showEvidence(${JSON.stringify(r).replace(/'/g, "&#39;")})'>View evidence (${r.evidence.length})</button>` : ''}
                 </td>
                 <td>
-                    <button class="evidence-btn" onclick='showEvidence(${JSON.stringify(r)})'>
-                        View (${r.evidence.length})
+                    <button class="btn btn-sm ${isSaved ? 'btn-secondary' : 'btn-save'}"
+                            onclick='${isSaved ? '' : `saveCompany(${JSON.stringify(r).replace(/'/g, "&#39;")})`}'
+                            ${isSaved ? 'disabled' : ''}>
+                        ${isSaved ? 'Saved' : 'Save'}
                     </button>
                 </td>
             </tr>
         `;
     }
 
-    // Disqualified results (collapsed)
     if (disqualified.length > 0) {
         html += `
             <tr>
@@ -181,7 +318,7 @@ function renderResults(results) {
             </tr>
         `;
 
-        for (const r of disqualified) {
+        for (const r of disqualified.slice(0, 10)) {
             html += `
                 <tr style="opacity: 0.6;">
                     <td>#${r.rank}</td>
@@ -190,11 +327,11 @@ function renderResults(results) {
                         <span class="tag disqualified">Disqualified</span>
                     </td>
                     <td>-</td>
-                    <td>-</td>
+                    <td><span class="tag region">${escapeHtml(extractRegion(r))}</span></td>
                     <td>${escapeHtml(r.business_model || '-')}</td>
                     <td>-</td>
-                    <td style="font-size: 0.8125rem; color: var(--danger);">
-                        ${r.disqualification_reasons.map(s => `<div>• ${escapeHtml(s)}</div>`).join('')}
+                    <td style="font-size: 0.75rem; color: var(--danger);">
+                        ${r.disqualification_reasons.slice(0, 2).map(s => `<div>• ${escapeHtml(s)}</div>`).join('')}
                     </td>
                     <td>-</td>
                 </tr>
@@ -207,6 +344,115 @@ function renderResults(results) {
 }
 
 /**
+ * Render saved companies organized by region
+ */
+function renderSavedCompanies() {
+    const selectedRegion = savedRegionFilter.value;
+
+    // Update region filter options
+    const regions = [...new Set(savedCompanies.map(c => c.region || extractRegion(c)))].sort();
+    savedRegionFilter.innerHTML = '<option value="">All Regions</option>';
+    regions.forEach(region => {
+        savedRegionFilter.innerHTML += `<option value="${escapeHtml(region)}" ${selectedRegion === region ? 'selected' : ''}>${escapeHtml(region)}</option>`;
+    });
+
+    // Filter companies
+    let filteredCompanies = savedCompanies;
+    if (selectedRegion) {
+        filteredCompanies = savedCompanies.filter(c => (c.region || extractRegion(c)) === selectedRegion);
+    }
+
+    if (filteredCompanies.length === 0) {
+        savedContainer.innerHTML = '<div class="empty-state"><p>No saved companies yet. Search for companies and click "Save" to add them here.</p></div>';
+        savedStats.innerHTML = '';
+        return;
+    }
+
+    // Group by region
+    const byRegion = {};
+    filteredCompanies.forEach(c => {
+        const region = c.region || extractRegion(c);
+        if (!byRegion[region]) byRegion[region] = [];
+        byRegion[region].push(c);
+    });
+
+    // Render stats
+    savedStats.innerHTML = `
+        <div class="stat">
+            <div class="stat-value">${filteredCompanies.length}</div>
+            <div class="stat-label">Total Saved</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">${Object.keys(byRegion).length}</div>
+            <div class="stat-label">Regions</div>
+        </div>
+        <div class="stat">
+            <div class="stat-value">${(filteredCompanies.reduce((sum, c) => sum + (c.fit_score || 0), 0) / filteredCompanies.length).toFixed(1)}</div>
+            <div class="stat-label">Avg Score</div>
+        </div>
+    `;
+
+    // Render grouped companies
+    let html = '';
+    Object.keys(byRegion).sort().forEach(region => {
+        const companies = byRegion[region];
+        html += `
+            <div class="region-group">
+                <div class="region-header">
+                    <h3>${escapeHtml(region)} <span class="count">${companies.length}</span></h3>
+                </div>
+                <div class="region-companies">
+        `;
+
+        companies.sort((a, b) => (b.fit_score || 0) - (a.fit_score || 0)).forEach(c => {
+            html += `
+                <div class="saved-company-card">
+                    <div class="saved-company-info">
+                        <h4>${escapeHtml(c.name)}</h4>
+                        <p>
+                            ${c.website ? `<a href="${escapeHtml(c.website)}" target="_blank">${escapeHtml(c.domain)}</a> • ` : ''}
+                            Score: ${(c.fit_score || 0).toFixed(1)}
+                            ${c.business_model ? ` • ${escapeHtml(c.business_model)}` : ''}
+                        </p>
+                    </div>
+                    <div class="saved-company-actions">
+                        <button class="btn btn-sm btn-secondary" onclick='showEvidence(${JSON.stringify(c).replace(/'/g, "&#39;")})'>Details</button>
+                        <button class="btn-remove" onclick="removeCompany('${escapeHtml(c.domain)}')">Remove</button>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div></div>';
+    });
+
+    savedContainer.innerHTML = html;
+}
+
+/**
+ * Export saved companies as CSV
+ */
+function exportSavedCompanies() {
+    if (savedCompanies.length === 0) {
+        alert('No saved companies to export');
+        return;
+    }
+
+    let csv = 'Name,Domain,Website,Score,Region,Business Model,Industries,Saved At\n';
+    savedCompanies.forEach(c => {
+        csv += `"${c.name}","${c.domain || ''}","${c.website || ''}","${(c.fit_score || 0).toFixed(1)}","${c.region || extractRegion(c)}","${c.business_model || ''}","${(c.industries || []).join('; ')}","${c.savedAt || ''}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'saved_companies.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+/**
  * Show evidence modal
  */
 function showEvidence(result) {
@@ -214,7 +460,6 @@ function showEvidence(result) {
 
     let html = '';
 
-    // Match summary
     if (result.match_summary && result.match_summary.length > 0) {
         html += '<h4 style="margin-bottom: 0.5rem;">Match Summary</h4>';
         html += '<ul style="margin-bottom: 1rem; padding-left: 1.5rem;">';
@@ -224,7 +469,6 @@ function showEvidence(result) {
         html += '</ul>';
     }
 
-    // Evidence items
     if (result.evidence && result.evidence.length > 0) {
         html += '<h4 style="margin-bottom: 0.5rem;">Supporting Evidence</h4>';
         for (const ev of result.evidence) {

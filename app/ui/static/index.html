@@ -33,16 +33,16 @@
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 1.5rem;
         }
 
         header {
             background: white;
             border-bottom: 1px solid var(--gray-200);
             padding: 1rem 2rem;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
         }
 
         header h1 {
@@ -55,10 +55,47 @@
             font-size: 0.875rem;
         }
 
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+            padding-bottom: 0;
+        }
+
+        .tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 0.9375rem;
+            font-weight: 500;
+            color: var(--gray-600);
+            border-bottom: 2px solid transparent;
+            margin-bottom: -1px;
+        }
+
+        .tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab:hover:not(.active) {
+            color: var(--gray-800);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
         .grid {
             display: grid;
-            grid-template-columns: 400px 1fr;
-            gap: 2rem;
+            grid-template-columns: 380px 1fr;
+            gap: 1.5rem;
         }
 
         @media (max-width: 1024px) {
@@ -91,12 +128,12 @@
 
         textarea {
             width: 100%;
-            min-height: 400px;
+            min-height: 350px;
             padding: 0.75rem;
             border: 1px solid var(--gray-300);
             border-radius: 6px;
             font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 0.8125rem;
+            font-size: 0.75rem;
             resize: vertical;
         }
 
@@ -117,6 +154,7 @@
             border: none;
             cursor: pointer;
             transition: all 0.15s;
+            gap: 0.5rem;
         }
 
         .btn-primary {
@@ -141,6 +179,24 @@
 
         .btn-secondary:hover {
             background: var(--gray-50);
+        }
+
+        .btn-sm {
+            padding: 0.375rem 0.75rem;
+            font-size: 0.8125rem;
+        }
+
+        .btn-save {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-save:hover {
+            background: #15803d;
+        }
+
+        .btn-save.saved {
+            background: var(--gray-300);
         }
 
         .btn-group {
@@ -194,6 +250,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
         }
 
         .results-count {
@@ -201,15 +259,29 @@
             font-size: 0.875rem;
         }
 
+        .filter-bar {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select {
+            padding: 0.5rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            font-size: 0.875rem;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
         }
 
         th, td {
             text-align: left;
-            padding: 0.75rem;
+            padding: 0.625rem;
             border-bottom: 1px solid var(--gray-200);
         }
 
@@ -244,10 +316,15 @@
             display: inline-block;
             padding: 0.125rem 0.5rem;
             border-radius: 9999px;
-            font-size: 0.75rem;
+            font-size: 0.6875rem;
             background: var(--gray-100);
             color: var(--gray-600);
             margin: 0.125rem;
+        }
+
+        .tag.region {
+            background: #dbeafe;
+            color: #1e40af;
         }
 
         .tag.disqualified {
@@ -351,6 +428,93 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Saved companies section */
+        .region-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .region-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background: var(--gray-100);
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+        }
+
+        .region-header h3 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .region-header .count {
+            background: var(--primary);
+            color: white;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+        }
+
+        .saved-company-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border: 1px solid var(--gray-200);
+            border-radius: 6px;
+            margin-bottom: 0.5rem;
+        }
+
+        .saved-company-info h4 {
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .saved-company-info p {
+            font-size: 0.8125rem;
+            color: var(--gray-600);
+        }
+
+        .saved-company-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-remove {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.8125rem;
+        }
+
+        .stats-bar {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+        }
     </style>
 </head>
 <body>
@@ -360,17 +524,24 @@
     </header>
 
     <div class="container">
-        <div class="grid">
-            <div class="panel">
-                <h2>Acquisition Criteria</h2>
-                <label for="criteria">Criteria JSON</label>
-                <textarea id="criteria">{
-  "industries_include": ["healthcare tech", "fintech"],
+        <div class="tabs">
+            <button class="tab active" data-tab="search">Search</button>
+            <button class="tab" data-tab="saved">Saved Companies <span id="savedCount">(0)</span></button>
+        </div>
+
+        <!-- Search Tab -->
+        <div id="search-tab" class="tab-content active">
+            <div class="grid">
+                <div class="panel">
+                    <h2>Acquisition Criteria</h2>
+                    <label for="criteria">Criteria JSON</label>
+                    <textarea id="criteria">{
+  "industries_include": ["healthcare tech", "fintech", "cybersecurity", "data analytics", "HR tech"],
   "industries_exclude": ["gambling", "cryptocurrency"],
-  "keywords_include": ["SaaS", "B2B", "enterprise"],
+  "keywords_include": ["SaaS", "B2B", "enterprise", "cloud", "platform", "software"],
   "keywords_exclude": ["consulting", "agency"],
   "geography": {
-    "countries": ["US", "UK", "CA"],
+    "countries": ["US", "UK", "CA", "DE", "AU"],
     "exclude_countries": []
   },
   "size": {
@@ -380,51 +551,80 @@
     "revenue_max": 50000000
   },
   "business_model": {
-    "types": ["SaaS"],
+    "types": ["SaaS", "marketplace"],
     "exclude_types": ["services"],
-    "recurring_revenue_required": true
+    "recurring_revenue_required": false
   },
-  "customer_type": ["B2B", "enterprise"],
+  "customer_type": ["B2B", "enterprise", "SMB"],
   "compliance_tags": ["SOC2"],
   "disqualifiers": ["bankruptcy", "lawsuit"],
   "dealbreakers": ["gambling", "adult content"],
   "preferred_signals": ["growing_team", "recent_funding"],
   "weights": {
     "industry": 0.2,
-    "business_model": 0.25,
+    "business_model": 0.2,
     "customer_type": 0.15,
     "size": 0.15,
     "compliance": 0.1,
-    "signals": 0.15
+    "signals": 0.1,
+    "keyword": 0.1
   }
 }</textarea>
 
-                <label class="checkbox-label" style="margin-top: 1rem;">
-                    <input type="checkbox" id="useMock">
-                    Use mock data (for testing)
-                </label>
+                    <label class="checkbox-label" style="margin-top: 1rem;">
+                        <input type="checkbox" id="useMock">
+                        Use mock data (for testing)
+                    </label>
 
-                <div class="btn-group">
-                    <button class="btn btn-primary" id="runSearch">Run Search</button>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="runSearch">Run Search</button>
+                    </div>
+
+                    <div id="status" class="status" style="display: none;"></div>
                 </div>
 
-                <div id="status" class="status" style="display: none;"></div>
-            </div>
+                <div class="panel">
+                    <div class="results-header">
+                        <h2>Results</h2>
+                        <div class="filter-bar">
+                            <select id="regionFilter">
+                                <option value="">All Regions</option>
+                            </select>
+                            <span id="resultsCount" class="results-count"></span>
+                            <button class="btn btn-secondary btn-sm" id="exportBtn" style="display: none;">
+                                Export CSV
+                            </button>
+                        </div>
+                    </div>
 
+                    <div id="resultsContainer">
+                        <div class="empty-state">
+                            <p>Enter your acquisition criteria and click "Run Search" to discover targets</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Companies Tab -->
+        <div id="saved-tab" class="tab-content">
             <div class="panel">
                 <div class="results-header">
-                    <h2>Results</h2>
-                    <div>
-                        <span id="resultsCount" class="results-count"></span>
-                        <button class="btn btn-secondary" id="exportBtn" style="display: none; margin-left: 1rem;">
-                            Export CSV
-                        </button>
+                    <h2>Saved Companies</h2>
+                    <div class="filter-bar">
+                        <select id="savedRegionFilter">
+                            <option value="">All Regions</option>
+                        </select>
+                        <button class="btn btn-secondary btn-sm" id="exportSavedBtn">Export Saved</button>
+                        <button class="btn btn-secondary btn-sm" id="clearSavedBtn">Clear All</button>
                     </div>
                 </div>
 
-                <div id="resultsContainer">
+                <div class="stats-bar" id="savedStats"></div>
+
+                <div id="savedContainer">
                     <div class="empty-state">
-                        <p>Enter your acquisition criteria and click "Run Search" to discover targets</p>
+                        <p>No saved companies yet. Search for companies and click "Save" to add them here.</p>
                     </div>
                 </div>
             </div>

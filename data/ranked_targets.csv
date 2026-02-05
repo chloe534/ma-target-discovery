@@ -1,0 +1,6 @@
+Rank,Name,Domain,Website,Fit Score,Confidence,Business Model,Industries,Customer Types,Employees,Match Summary,Evidence Count,Disqualified,Disqualification Reasons
+1,FinanceFlow,financeflow.io,https://financeflow.io,10.0,0.15,,,,,Limited match data available,0,No,
+2,DataSync Pro,datasyncpro.com,https://datasyncpro.com,10.0,0.15,,,,,Limited match data available,0,No,
+3,CloudSecure,cloudsecure.io,https://cloudsecure.io,10.0,0.15,,,,,Limited match data available,0,No,
+4,RetailAI,retailai.co,https://retailai.co,10.0,0.15,,,,,Limited match data available,0,No,
+5,HealthTech Solutions,healthtechsolutions.com,https://healthtechsolutions.com,0.0,0.72,services,data infrastructure; cybersecurity; proptech; healthcare tech; hrtech; edtech; logistics; devtools,B2B; enterprise,,"Industry match: cybersecurity, healthcare tech | Customer focus: B2B, enterprise | Positive signals: growing team | Keyword 'SaaS' found on website | Keyword 'enterprise' found on website",5,Yes,Excluded business model: services

@@ -18,7 +18,7 @@ class DuckDuckGoConnector(SourceConnector):
 
     name = "duckduckgo"
 
-    def __init__(self, results_per_query: int = 10):
+    def __init__(self, results_per_query: int = 25):
         self.results_per_query = results_per_query
 
     def generate_queries(self, criteria: AcquisitionCriteria) -> list[str]:
@@ -33,13 +33,34 @@ class DuckDuckGoConnector(SourceConnector):
 
         # Business model specific queries
         for bm_type in criteria.business_model.types:
-            for industry in criteria.industries_include[:3]:
+            for industry in criteria.industries_include[:5]:
                 queries.append(f"{industry} {bm_type}")
+                queries.append(f"{industry} {bm_type} startup")
+                queries.append(f"{industry} {bm_type} company")
+
+        # Geography-specific queries
+        for country in criteria.geography.countries[:3]:
+            for industry in criteria.industries_include[:3]:
+                queries.append(f"{industry} companies {country}")
+                queries.append(f"{industry} startups {country}")
+
+        # Customer type queries
+        for ctype in criteria.customer_type[:2]:
+            for industry in criteria.industries_include[:3]:
+                queries.append(f"{ctype} {industry} software")
+
+        # Additional discovery queries
+        for keyword in criteria.keywords_include[:5]:
+            queries.append(f"{keyword} software companies")
+            queries.append(f"{keyword} startups 2024")
+            queries.append(f"top {keyword} companies")
+            queries.append(f"best {keyword} platforms")
 
         # Add exclusion terms to queries
         exclusions = " ".join(f"-{term}" for term in criteria.keywords_exclude[:5])
 
-        return [f"{q} {exclusions}".strip() for q in queries[:20]]
+        # Return more queries for broader coverage
+        return [f"{q} {exclusions}".strip() for q in queries[:40]]
 
     async def search(
         self,
